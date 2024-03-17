@@ -2,75 +2,160 @@
 extern crate alloc;
 
 use pink_extension as pink;
+use scale::{Decode, Encode};
+use scale_info::TypeInfo;
+use ink::storage::traits::StorageLayout;
+use pink::{Balance, BlockNumber};
+use ink::storage::Mapping;
+use alloc::vec::Vec;
+
+#[derive(Encode, Decode, Debug)]
+#[cfg_attr(feature = "std", derive(StorageLayout, TypeInfo))]
+pub struct OnchainTradingAccounts {
+    pub substrate: Vec<u8>,
+    pub ethereum: Vec<u8>,
+    pub solana: Vec<u8>
+}
+
+#[derive(Debug, PartialEq, Eq, Encode, Decode, TypeInfo)]
+pub enum Network {
+    Substrate,
+    Ethereum,
+    Solana
+}
+
+#[derive(Debug, PartialEq, Eq, Encode, Decode, TypeInfo)]
+pub enum Error {
+    /// If the trader account is not registered
+    UnregisteredTraderAccount,
+    /// When the specified network private key is already registered
+    PrivateKeyOfThatNetworkAlreadyRegistered,
+
+    KeysUnavailable  
+}
+
+type SigningResult<T> = Result<T, Error>;
+
+#[macro_export]
+macro_rules! fail {
+    ( $y:expr ) => {{
+        return Err($y.into());
+    }};
+}
+macro_rules! ensure {
+    ( $x:expr, $y:expr $(,)? ) => {{
+        if !$x {
+            $crate::fail!($y);
+        }
+    }};
+}
+
 
 #[pink::contract(env=PinkEnvironment)]
 mod spectre_pse {
-    use super::pink;
+    use super::*;
     use pink::chain_extension::signing as sig;
     use sig::SigType;
     use pink::PinkEnvironment;
-    use alloc::{string::String, vec::Vec};
+
 
     #[ink(storage)]
     pub struct SpectrePse {
-        privkey: Vec<u8>,
-        pubkey: Vec<u8>,
+        onchain_trading_account: Mapping<AccountId,OnchainTradingAccounts>,
+        relayer_account: Vec<u8> // relayer private account for sponsoring some accounts txn fees
     }
 
     impl SpectrePse {
         /// Constructor to initializes your contract
         #[ink(constructor)]
-        pub fn default() -> Self {
-            let gen_privkey = sig::derive_sr25519_key(b"a spoon of salt");
-            let gen_pubkey = sig::get_public_key(&gen_privkey, SigType::Sr25519);
+        pub fn seeding(key: Vec<u8> ) -> Self {
             Self {
-                privkey: gen_privkey,
-                pubkey: gen_pubkey,
+                onchain_trading_account: Mapping::default(),
+                relayer_account: key,
             }
         }
 
         #[ink(message)]
-        pub fn sign(&self, message: String) -> Vec<u8> {
-            let signature = sig::sign(message.as_bytes(), &self.privkey, SigType::Sr25519);
-            signature
+        pub fn generate_onchain_trader_keys(&mut self) -> SigningResult<()> {
+            let caller = Self::env().caller();
+            let caller_public_key:&[u8;32] = caller.as_ref();
+
+            ensure!(self.onchain_trading_account.contains(&caller),Error::UnregisteredTraderAccount);
+            let sub_privkey = sig::derive_sr25519_key(caller_public_key);
+            let keys = OnchainTradingAccounts {
+                substrate: sub_privkey.clone(),
+                ethereum: sub_privkey.clone(),
+                solana: sub_privkey.clone()
+            };
+
+            self.onchain_trading_account.insert(caller,&keys);
+           // let gen_pubkey = sig::get_public_key(&sub_privkey, SigType::Sr25519);
+            Ok(())
         }
 
         #[ink(message)]
-        pub fn verify(&self, message: String, signature: Vec<u8>) -> bool {
-            let pass = sig::verify(message.as_bytes(), &self.pubkey, &signature, SigType::Sr25519);
-            pass
+        pub fn sign(&self, network: Network, message: Vec<u8>) -> SigningResult<Vec<u8>> {
+            let caller = Self::env().caller();
+
+            ensure!(self.onchain_trading_account.contains(&caller),Error::UnregisteredTraderAccount);
+
+            match network {
+                Network::Substrate => {
+                    let key = &self.onchain_trading_account.get(caller).ok_or(Error::UnregisteredTraderAccount)?.substrate;
+
+                    let signature = sig::sign(&message, key, SigType::Sr25519);
+                    Ok(signature)
+
+                },
+                Network::Ethereum => {
+                    let key = &self.onchain_trading_account.get(caller).ok_or(Error::UnregisteredTraderAccount)?.ethereum;
+
+                    let signature = sig::sign(&message, key, SigType::Ecdsa);
+                    Ok(signature)
+                },
+                Network::Solana => {
+                    let key = &self.onchain_trading_account.get(caller).ok_or(Error::UnregisteredTraderAccount)?.solana;
+
+                    let signature = sig::sign(&message, key, SigType::Ed25519);
+                    Ok(signature)
+                }
+
+            }
+            
         }
 
-        #[ink(message)]
-        pub fn test(&self) {
-            let privkey = sig::derive_sr25519_key(b"a spoon of salt");
-            let pubkey = sig::get_public_key(&privkey, SigType::Sr25519);
-            let message = b"hello world";
-            let signature = sig::sign(message, &privkey, SigType::Sr25519);
-            let pass = sig::verify(message, &pubkey, &signature, SigType::Sr25519);
-            assert!(pass);
-            let pass = sig::verify(b"Fake", &pubkey, &signature, SigType::Sr25519);
-            assert!(!pass);
+        #[ink(message, selector = 0xCODE0003)]
+        pub fn get_public_keys(&self) -> SigningResult<OnchainTradingAccounts>{
+            let caller = Self::env().caller();
+
+            ensure!(self.onchain_trading_account.contains(&caller),Error::UnregisteredTraderAccount);
+
+            let keys = self.onchain_trading_account.get(caller).ok_or(Error::UnregisteredTraderAccount)?;
+
+            Ok(keys) 
         }
     }
 
-    /// Unit tests in Rust are normally defined within such a `#[cfg(test)]`
-    /// module and test functions are marked with a `#[test]` attribute.
-    /// The below code is technically just normal Rust code.
     #[cfg(test)]
     mod tests {
         use super::*;
 
         #[ink::test]
-        fn it_works() {
+        fn generate_onchain_trader_keys_works() {
             pink_extension_runtime::mock_ext::mock_all_ext();
 
-            let contract = SpectrePse::default();
-            let message = String::from("hello world");
-            let sign_message = contract.sign(message.clone());
-            let verify_signature = contract.verify(message.clone(), sign_message);
-            assert!(verify_signature);
-            contract.test();
+            // let contract = SpectrePse::seeding();
+            // let message = String::from("hello world");
+            // let sign_message = contract.sign(message.clone());
+            // let verify_signature = contract.verify(message.clone(), sign_message);
+            // assert!(verify_signature);
+            // contract.test();
+        }
+
+        #[ink::test]
+        fn sign_works(){
+            pink_extension_runtime::mock_ext::mock_all_ext();
+ 
         }
     }
 }

@@ -195,7 +195,7 @@ dist
 
 # Support for Project snippet scope
 .vscode/*.code-snippets
-
+stacks
 # Ignore code-workspaces
 *.code-workspace
 
