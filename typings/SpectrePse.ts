@@ -42,6 +42,7 @@ export namespace SpectrePse {
         unregisteredTraderAccount?: null;
         privateKeyOfThatNetworkAlreadyRegistered?: null;
         keysUnavailable?: null;
+        failedToConvertPubKey?: null;
         [index: string]: any;
     }
 
@@ -53,21 +54,23 @@ export namespace SpectrePse {
     }
 
     export interface OnchainTradingAccounts {
-        substrate: number[] | string;
-        ethereum: number[] | string;
-        solana: number[] | string;
+        substrate: [number[] | string, string | number[]];
+        ethereum: [number[] | string, string | number[]];
+        solana: [number[] | string, string | number[]];
     }
 
     export namespace Error$ {
         export enum Enum {
             UnregisteredTraderAccount = "UnregisteredTraderAccount",
             PrivateKeyOfThatNetworkAlreadyRegistered = "PrivateKeyOfThatNetworkAlreadyRegistered",
-            KeysUnavailable = "KeysUnavailable"
+            KeysUnavailable = "KeysUnavailable",
+            FailedToConvertPubKey = "FailedToConvertPubKey"
         }
 
         export type Human = SpectrePse.Error$.Enum.UnregisteredTraderAccount & { [index: string]: any }
             | SpectrePse.Error$.Enum.PrivateKeyOfThatNetworkAlreadyRegistered & { [index: string]: any }
-            | SpectrePse.Error$.Enum.KeysUnavailable & { [index: string]: any };
+            | SpectrePse.Error$.Enum.KeysUnavailable & { [index: string]: any }
+            | SpectrePse.Error$.Enum.FailedToConvertPubKey & { [index: string]: any };
 
         export interface Codec extends PT.Enum {
             type: Enum;
@@ -102,15 +105,15 @@ export namespace SpectrePse {
 
     export namespace OnchainTradingAccounts$ {
         export interface Human {
-            substrate: number[] | string;
-            ethereum: number[] | string;
-            solana: number[] | string;
+            substrate: [number[] | string, string];
+            ethereum: [number[] | string, string];
+            solana: [number[] | string, string];
         }
 
         export interface Codec extends DPT.Json<SpectrePse.OnchainTradingAccounts, SpectrePse.OnchainTradingAccounts$.Human> {
-            substrate: PT.Vec<PT.U8>;
-            ethereum: PT.Vec<PT.U8>;
-            solana: PT.Vec<PT.U8>;
+            substrate: PTT.ITuple<[PT.Vec<PT.U8>, PTI.AccountId]>;
+            ethereum: PTT.ITuple<[PT.Vec<PT.U8>, PTI.AccountId]>;
+            solana: PTT.ITuple<[PT.Vec<PT.U8>, PTI.AccountId]>;
         }
     }
 }
@@ -132,7 +135,7 @@ export namespace SpectrePse {
     /** Queries */
     /** */
     namespace ContractQuery {
-        export interface GenerateOnchainTraderKeys extends DPT.ContractQuery {
+        export interface GenerateOnchainTradingAccount extends DPT.ContractQuery {
             (
                 origin: DPT.ContractCallOrigin,
                 options: DPT.ContractCallOptions,
@@ -158,6 +161,21 @@ export namespace SpectrePse {
             >;
         }
 
+        export interface RegisterTradingAccountToSpectre extends DPT.ContractQuery {
+            (
+                origin: DPT.ContractCallOrigin,
+                options: DPT.ContractCallOptions,
+            ): DPT.CallReturn<
+                DPT.Result$.Codec<
+                    DPT.Result$.Codec<
+                        PTT.ITuple<[]>,
+                        SpectrePse.Error$.Codec
+                    >,
+                    InkPrimitives.LangError$.Codec
+                >
+            >;
+        }
+
         export interface GetPublicKeys extends DPT.ContractQuery {
             (
                 origin: DPT.ContractCallOrigin,
@@ -175,8 +193,9 @@ export namespace SpectrePse {
     }
 
     interface MapMessageQuery extends DPT.MapMessageQuery {
-        generateOnchainTraderKeys: ContractQuery.GenerateOnchainTraderKeys;
+        generateOnchainTradingAccount: ContractQuery.GenerateOnchainTradingAccount;
         sign: ContractQuery.Sign;
+        registerTradingAccountToSpectre: ContractQuery.RegisterTradingAccountToSpectre;
         getPublicKeys: ContractQuery.GetPublicKeys;
     }
 
@@ -184,13 +203,13 @@ export namespace SpectrePse {
     /** Transactions */
     /** */
     namespace ContractTx {
-        export interface GenerateOnchainTraderKeys extends DPT.ContractTx {
+        export interface GenerateOnchainTradingAccount extends DPT.ContractTx {
             (options: ContractOptions): DPT.SubmittableExtrinsic;
         }
     }
 
     interface MapMessageTx extends DPT.MapMessageTx {
-        generateOnchainTraderKeys: ContractTx.GenerateOnchainTraderKeys;
+        generateOnchainTradingAccount: ContractTx.GenerateOnchainTradingAccount;
     }
 
     /** */
