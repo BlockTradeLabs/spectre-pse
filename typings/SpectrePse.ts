@@ -53,10 +53,10 @@ export namespace SpectrePse {
         [index: string]: any;
     }
 
-    export interface OnchainTradingAccounts {
-        substrate: [number[] | string, string | number[]];
-        ethereum: [number[] | string, string | number[]];
-        solana: [number[] | string, string | number[]];
+    export interface OnchainTradingPublicKeys {
+        substrate: string | number[];
+        ethereum: string | number[];
+        solana: string | number[];
     }
 
     export namespace Error$ {
@@ -103,17 +103,17 @@ export namespace SpectrePse {
         }
     }
 
-    export namespace OnchainTradingAccounts$ {
+    export namespace OnchainTradingPublicKeys$ {
         export interface Human {
-            substrate: [number[] | string, string];
-            ethereum: [number[] | string, string];
-            solana: [number[] | string, string];
+            substrate: string;
+            ethereum: string;
+            solana: string;
         }
 
-        export interface Codec extends DPT.Json<SpectrePse.OnchainTradingAccounts, SpectrePse.OnchainTradingAccounts$.Human> {
-            substrate: PTT.ITuple<[PT.Vec<PT.U8>, PTI.AccountId]>;
-            ethereum: PTT.ITuple<[PT.Vec<PT.U8>, PTI.AccountId]>;
-            solana: PTT.ITuple<[PT.Vec<PT.U8>, PTI.AccountId]>;
+        export interface Codec extends DPT.Json<SpectrePse.OnchainTradingPublicKeys, SpectrePse.OnchainTradingPublicKeys$.Human> {
+            substrate: PTI.AccountId;
+            ethereum: PTI.AccountId;
+            solana: PTI.AccountId;
         }
     }
 }
@@ -165,10 +165,11 @@ export namespace SpectrePse {
             (
                 origin: DPT.ContractCallOrigin,
                 options: DPT.ContractCallOptions,
+                message: number[] | string | PT.Vec<PT.U8>,
             ): DPT.CallReturn<
                 DPT.Result$.Codec<
                     DPT.Result$.Codec<
-                        PTT.ITuple<[]>,
+                        PT.Vec<PT.U8>,
                         SpectrePse.Error$.Codec
                     >,
                     InkPrimitives.LangError$.Codec
@@ -183,7 +184,7 @@ export namespace SpectrePse {
             ): DPT.CallReturn<
                 DPT.Result$.Codec<
                     DPT.Result$.Codec<
-                        SpectrePse.OnchainTradingAccounts$.Codec,
+                        SpectrePse.OnchainTradingPublicKeys$.Codec,
                         SpectrePse.Error$.Codec
                     >,
                     InkPrimitives.LangError$.Codec

@@ -1,11 +1,11 @@
 {
   "source": {
-    "hash": "0x20bca55beb1ab83bdac35cdf52741e74c650a75e67127db8da33e92e9bd7fdee",
+    "hash": "0x942e9715bee1b4b3548508b44874b662366e021550ec2efe112bb7b01ad2abd3",
     "language": "ink! 4.3.0",
     "compiler": "rustc 1.75.0",
     "build_info": {
       "build_mode": "Release",
-      "cargo_contract_version": "4.0.2",
+      "cargo_contract_version": "4.1.1",
       "rust_toolchain": "stable-aarch64-apple-darwin",
       "wasm_opt_settings": {
         "keep_debug_symbols": false,
@@ -63,32 +63,32 @@
         "displayName": [
           "Balance"
         ],
-        "type": 17
+        "type": 16
       },
       "blockNumber": {
         "displayName": [
           "BlockNumber"
         ],
-        "type": 20
+        "type": 19
       },
       "chainExtension": {
         "displayName": [
           "ChainExtension"
         ],
-        "type": 21
+        "type": 20
       },
       "hash": {
         "displayName": [
           "Hash"
         ],
-        "type": 18
+        "type": 17
       },
       "maxEventTopics": 4,
       "timestamp": {
         "displayName": [
           "Timestamp"
         ],
-        "type": 19
+        "type": 18
       }
     },
     "events": [],
@@ -152,7 +152,17 @@
         "selector": "0x81ca8fa1"
       },
       {
-        "args": [],
+        "args": [
+          {
+            "label": "message",
+            "type": {
+              "displayName": [
+                "Vec"
+              ],
+              "type": 0
+            }
+          }
+        ],
         "default": false,
         "docs": [],
         "label": "register_trading_account_to_spectre",
@@ -163,7 +173,7 @@
             "ink",
             "MessageResult"
           ],
-          "type": 7
+          "type": 11
         },
         "selector": "0x00bfe4fc"
       },
@@ -742,25 +752,25 @@
             "fields": [
               {
                 "name": "substrate",
-                "type": 16,
-                "typeName": "(Vec<u8>, AccountId)"
+                "type": 2,
+                "typeName": "AccountId"
               },
               {
                 "name": "ethereum",
-                "type": 16,
-                "typeName": "(Vec<u8>, AccountId)"
+                "type": 2,
+                "typeName": "AccountId"
               },
               {
                 "name": "solana",
-                "type": 16,
-                "typeName": "(Vec<u8>, AccountId)"
+                "type": 2,
+                "typeName": "AccountId"
               }
             ]
           }
         },
         "path": [
           "spectrePSE",
-          "OnchainTradingAccounts"
+          "OnchainTradingPublicKeys"
         ]
       }
     },
@@ -768,23 +778,12 @@
       "id": 16,
       "type": {
         "def": {
-          "tuple": [
-            0,
-            2
-          ]
-        }
-      }
-    },
-    {
-      "id": 17,
-      "type": {
-        "def": {
           "primitive": "u128"
         }
       }
     },
     {
-      "id": 18,
+      "id": 17,
       "type": {
         "def": {
           "composite": {
@@ -804,7 +803,7 @@
       }
     },
     {
-      "id": 19,
+      "id": 18,
       "type": {
         "def": {
           "primitive": "u64"
@@ -812,7 +811,7 @@
       }
     },
     {
-      "id": 20,
+      "id": 19,
       "type": {
         "def": {
           "primitive": "u32"
@@ -820,7 +819,7 @@
       }
     },
     {
-      "id": 21,
+      "id": 20,
       "type": {
         "def": {
           "variant": {}

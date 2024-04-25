@@ -4,11 +4,10 @@ extern crate alloc;
 use alloc::vec::Vec;
 use ink::storage::traits::StorageLayout;
 use ink::storage::Mapping;
-use pink::{AccountId, Balance, BlockNumber};
 use pink_extension as pink;
+use pink::{AccountId, Balance, BlockNumber};
 use scale::{Decode, Encode};
 use scale_info::TypeInfo;
-use pink_web3;
 
 /// A struct for onchain trading accounts ( Sk, Pk )
 #[derive(Encode, Decode, Debug)]
